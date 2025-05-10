@@ -1,0 +1,13 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create
+
+local:
+  management:
+    port: 8041
+  server:
+    port: 8040
+
+jwt:
+  secret: YWtqc2hmZ2xqa2FsaHNkYmZ2d3NnZWJmYWRzZnNhZmRlZ2Vxd3JkZ2JuZg==
