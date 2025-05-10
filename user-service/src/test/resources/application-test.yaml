@@ -1,0 +1,10 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create
+local:
+  management:
+    port: 8041
+  server:
+    port: 8040
+
