@@ -1,4 +1,4 @@
 ### GET request to get all patients
 GET http://localhost:4002/users
-Authorization: Bearer {{token}}
+#Authorization: Bearer {{token}}
 ###

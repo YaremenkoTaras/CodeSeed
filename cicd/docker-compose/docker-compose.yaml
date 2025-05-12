@@ -1,0 +1,136 @@
+services:
+
+  user-service-db:
+    image: postgres:latest
+    container_name: user-service-db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: user_service_db
+      PGDATA: data/postgres
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "5001:5432"
+    networks:
+      - internal_network
+    restart: unless-stopped
+
+  auth-service-db:
+    image: postgres:latest
+    container_name: auth-service-db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: auth_service_db
+    ports:
+      - "5002:5432"
+    networks:
+      - internal_network
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin_container
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@admin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    ports:
+      - "5050:80"
+    networks:
+      - internal_network
+    restart: unless-stopped
+
+  user-service:
+    image: tyaremenko949/user-service:latest
+    container_name: user-service
+    ports:
+      - "4002:4002"
+    networks:
+      - internal_network
+    restart: unless-stopped
+    depends_on:
+      - user-service-db
+      - kafka-broker
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://user-service-db:5432/user_service_db
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_SQL_INIT_MODE=ALWAYS
+
+  auth-service:
+    image: tyaremenko949/auth-service:latest
+    container_name: auth-service
+    ports:
+      - "4001:4001"
+    networks:
+      - internal_network
+    restart: unless-stopped
+    depends_on:
+      - auth-service-db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://auth-service-db:5432/auth_service_db
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_SQL_INIT_MODE=ALWAYS
+      - JWT_SECRET=YWtqc2hmZ2xqa2FsaHNkYmZ2d3NnZWJmYWRzZnNhZmRlZ2Vxd3JkZ2JuZg==
+
+  billing-service:
+    image: tyaremenko949/billing-service:latest
+    container_name: billing-service
+    ports:
+      - "4003:4003"
+    networks:
+      - internal_network
+    restart: unless-stopped
+
+  gateway:
+    image: tyaremenko949/gateway:latest
+    container_name: gateway
+    ports:
+      - "4000:4000"
+    networks:
+      - internal_network
+    restart: unless-stopped
+    environment:
+      - AUTH_SERVICE_URL=http://auth-service:4001
+
+  analytics-service:
+    image: tyaremenko949/analytics-service:latest
+    container_name: analytics-service
+    networks:
+      - internal_network
+    restart: unless-stopped
+    depends_on:
+      - kafka-broker
+
+  kafka-broker:
+    image: bitnami/kafka:latest
+    container_name: kafka-broker
+    environment:
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+    ports:
+      - "9092:9092"
+      - "9094:9094"
+    networks:
+      - internal_network
+    restart: unless-stopped
+
+networks:
+  internal_network:
+    driver: bridge
+
+volumes:
+  postgres:
+  pgadmin:
