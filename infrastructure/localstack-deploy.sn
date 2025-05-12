@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e # Exit immediately if a command exits with a non-zero status.
+
+echo "Starting LocalStack..."
+docker compose up -d
+echo "LocalStack started on http://localhost:4566"
+
+echo "Deploying to LocalStack..."
+aws --endpoint-url=http://localhost:4566 --region us-west-1 cloudformation deploy \
+    --stack-name code-seed \
+    --template-file "./cdk.out/localstack.template.json" \
+
+echo "Deployment complete."
+
+
+echo "Exporting load balancer DNS name to localstack.dns..."
+aws --endpoint-url=http://localhost:4566 elbv2 describe-load-balancers \
+    --query "LoadBalancers[0].DNSName" --output text

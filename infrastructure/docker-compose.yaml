@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  localstack:
+    image: localstack/localstack:latest
+    container_name: localstack
+    environment:
+      - SERVICES=ecs,ec2,rds,kafka,elbv2,cloudformation,secretsmanager,iam,logs
+      - DEBUG=1
+      # Recommended: increase for heavy stacks
+      # - LS_LOG=info
+      # Uncomment and set for specific needs:
+      # - AWS_ACCESS_KEY_ID=test
+      # - AWS_SECRET_ACCESS_KEY=test
+    ports:
+      - "4566:4566"    # Main edge port for all services
+      # - "4510:4510"  # Kafka (uncomment if you need this accessible from host)
+      # Add others if required
+    volumes:
+      # For ECS, Lambda, etc., Docker socket is needed:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      # To persist LocalStack state across restarts:
+      # - "./localstack-data:/var/lib/localstack"
